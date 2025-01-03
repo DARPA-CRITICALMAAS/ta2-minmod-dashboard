@@ -37,7 +37,7 @@ Install [docker](https://docs.docker.com/engine/installation/) and build the ima
 docker compose build
 ```
 
-The container of the dashboard will be created and run from the ta2-minmod-kg docker compose.
+The container of the dashboard will be created and run from the [ta2-minmod-kg](https://github.com/DARPA-CRITICALMAAS/ta2-minmod-kg/blob/main/docker-compose.yml) docker compose.
 
 Otherwise, for the standalone web service:
 
