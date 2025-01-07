@@ -1,12 +1,11 @@
 version: "3.8"
 
 services:
-  minmod:
+  dashboard:
     build:
       context: .
       dockerfile: Dockerfile
-    image: toan2/minmod-dashboard
-    container_name: minmod
+    image: minmod-dashboard
     ports:
       - "8050:8050"
     environment: 
