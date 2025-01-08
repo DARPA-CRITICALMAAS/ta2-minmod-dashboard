@@ -216,8 +216,12 @@ class GradeTonnage:
 
                 # GT details
                 if "total_grade" in data["grade_tonnage"][0]:
-                    combined_data["total_grade"] = data["grade_tonnage"][0]["total_grade"]
-                    combined_data["total_tonnage"] = data["grade_tonnage"][0]["total_tonnage"]
+                    combined_data["total_grade"] = data["grade_tonnage"][0][
+                        "total_grade"
+                    ]
+                    combined_data["total_tonnage"] = data["grade_tonnage"][0][
+                        "total_tonnage"
+                    ]
                     combined_data["total_contained_metal"] = data["grade_tonnage"][0][
                         "total_contained_metal"
                     ]
@@ -269,19 +273,19 @@ class GradeTonnage:
     @lru_cache_with_date_range(maxsize=10)
     def compute_all_distances(self, commodities):
         distances = {}
-        num_points = len(self.df)
+        indices = self.df.index
 
-        # Compare each point with every other point and store distances
-        for i in range(num_points):
-            for j in range(i + 1, num_points):
-                distance = self.haversine(
-                    self.df.iloc[i]["lat"],
-                    self.df.iloc[i]["lon"],
-                    self.df.iloc[j]["lat"],
-                    self.df.iloc[j]["lon"],
-                )
-                distances[(i, j)] = distance
-                distances[(j, i)] = distance  # Symmetric distances
+        for i in indices:
+            for j in indices:
+                if i < j:
+                    distance = self.haversine(
+                        self.df.loc[i, "lat"],
+                        self.df.loc[i, "lon"],
+                        self.df.loc[j, "lat"],
+                        self.df.loc[j, "lon"],
+                    )
+                    distances[(i, j)] = distance
+                    distances[(j, i)] = distance
 
         return distances
 

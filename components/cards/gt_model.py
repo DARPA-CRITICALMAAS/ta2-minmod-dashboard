@@ -29,8 +29,11 @@ def greedy_weighted_avg_aggregation(df, distances, proximity_threshold):
     aggregated_data = []
     processed_indices = set()
 
-    # Loop through all points
-    for i in range(len(df)):
+    # Get the row indices of the DataFrame
+    row_indices = df.index
+
+    # Loop through all points by row index
+    for i in row_indices:
         if i in processed_indices:
             continue  # Skip already processed points
 
@@ -39,7 +42,7 @@ def greedy_weighted_avg_aggregation(df, distances, proximity_threshold):
         processed_indices.add(i)
 
         # Find all nearby points within the proximity threshold
-        for j in range(len(df)):
+        for j in row_indices:
             if i != j and j not in processed_indices:
                 # Ensure that the distance is valid and is not None
                 distance = distances.get((i, j))
@@ -48,29 +51,29 @@ def greedy_weighted_avg_aggregation(df, distances, proximity_threshold):
                     processed_indices.add(j)
 
         # Calculate the weighted average of the grade using tonnage as weights
-        total_tonnage = df.iloc[group]["total_tonnage"].sum()
+        total_tonnage = df.loc[group, "total_tonnage"].sum()
         weighted_grade = np.average(
-            df.iloc[group]["total_grade"], weights=df.iloc[group]["total_tonnage"]
+            df.loc[group, "total_grade"], weights=df.loc[group, "total_tonnage"]
         )
 
         # Combine ms_name values from the group
-        if len(df.iloc[group]["ms_name"]) > 1:
-            combined_ms_name = ":: " + ":: ".join(df.iloc[group]["ms_name"])
+        if len(df.loc[group, "ms_name"]) > 1:
+            combined_ms_name = ":: " + ":: ".join(df.loc[group, "ms_name"])
         else:
-            combined_ms_name = ":: ".join(df.iloc[group]["ms_name"])
+            combined_ms_name = ":: ".join(df.loc[group, "ms_name"])
 
         # Combine ms values from the group
-        if len(df.iloc[group]["ms"]) > 1:
-            combined_ms = ":: " + ":: ".join(df.iloc[group]["ms"])
+        if len(df.loc[group, "ms"]) > 1:
+            combined_ms = ":: " + ":: ".join(df.loc[group, "ms"])
         else:
-            combined_ms = ":: ".join(df.iloc[group]["ms"])
+            combined_ms = ":: ".join(df.loc[group, "ms"])
 
         # Retrieve consistent values for other columns
-        ms_value = df.iloc[group[0]]["ms"]
-        commodity_value = df.iloc[group[0]]["commodity"]
-        top1_deposit_name_value = df.iloc[group[0]]["top1_deposit_name"]
-        lat = df.iloc[group[0]]["lat"]
-        lon = df.iloc[group[0]]["lon"]
+        ms_value = df.loc[group[0], "ms"]
+        commodity_value = df.loc[group[0], "commodity"]
+        top1_deposit_name_value = df.loc[group[0], "top1_deposit_name"]
+        lat = df.loc[group[0], "lat"]
+        lon = df.loc[group[0], "lon"]
 
         aggregated_data.append(
             {
@@ -148,9 +151,13 @@ def get_gt_model(gt, proximity_value=0):
                     lambda x: x.replace("::", "<br>")
                 ),  # Use truncated names for the labels on the plot
                 hovertemplate=hover_template,  # Use full names for the hover text
-                customdata=pd.DataFrame({"commodity":aggregated_df["commodity"].apply(
-    lambda x: gt.data_cache["commodities"][x]["name"]
-)}),
+                customdata=pd.DataFrame(
+                    {
+                        "commodity": aggregated_df["commodity"].apply(
+                            lambda x: gt.data_cache["commodities"][x]["name"]
+                        )
+                    }
+                ),
                 name=f"{d_type} ({deposit_count})",  # Add the count of deposits to the legend name
                 marker=dict(color=color_map[d_type], size=10, symbol="circle"),
                 textposition="top center",
