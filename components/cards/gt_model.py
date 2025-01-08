@@ -29,11 +29,21 @@ def greedy_weighted_avg_aggregation(df, distances, proximity_threshold):
     aggregated_data = []
     processed_indices = set()
 
-    # Get the row indices of the DataFrame
-    row_indices = df.index
+    valid_indices = set(df.index)
 
-    # Loop through all points by row index
-    for i in row_indices:
+    # Sort the distances and extract sorted row pairs
+    sorted_distances = sorted(distances.items(), key=lambda x: x[1])
+
+    # Flatten the sorted row pairs into a list of valid row indices
+    sorted_row_indices = [
+        index
+        for pair, _ in sorted_distances
+        for index in pair
+        if index in valid_indices
+    ]
+
+    # Loop through all points by sorted row index
+    for i in sorted_row_indices:
         if i in processed_indices:
             continue  # Skip already processed points
 
@@ -42,19 +52,33 @@ def greedy_weighted_avg_aggregation(df, distances, proximity_threshold):
         processed_indices.add(i)
 
         # Find all nearby points within the proximity threshold
-        for j in row_indices:
+        for j in sorted_row_indices:
             if i != j and j not in processed_indices:
                 # Ensure that the distance is valid and is not None
                 distance = distances.get((i, j))
-                if distance is not None and distance < proximity_threshold:
+                if (
+                    distance is not None
+                    and distance < proximity_threshold
+                    and j in valid_indices
+                ):
                     group.append(j)
                     processed_indices.add(j)
+
+        # Validate the group indices exist in the DataFrame
+        group = [idx for idx in group if idx in valid_indices]
+
+        # Proceed only if the group is valid
+        if not group:
+            continue
 
         # Calculate the weighted average of the grade using tonnage as weights
         total_tonnage = df.loc[group, "total_tonnage"].sum()
         weighted_grade = np.average(
             df.loc[group, "total_grade"], weights=df.loc[group, "total_tonnage"]
         )
+
+        # Combine ms_name values from the group
+        combined_ms_name = ":: ".join(df.loc[group, "ms_name"])
 
         # Combine ms_name values from the group
         if len(df.loc[group, "ms_name"]) > 1:
