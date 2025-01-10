@@ -61,9 +61,7 @@ class MineralSite:
         for data in raw_data:
 
             combined_data = {}
-            combined_data["ms"] = "/".join(
-                [API_ENDPOINT.split("/api/v1")[0], "derived", data["id"]]
-            )
+            combined_data["ms"] = "/".join(["/derived", data["id"]])
             combined_data["ms_name"] = data["name"]
             combined_data["ms_type"] = data["type"]
             combined_data["ms_rank"] = data["rank"]
