@@ -51,7 +51,7 @@ class GeoMineral:
 
             combined_data = {}
             combined_data["ms"] = "/".join(
-                [API_ENDPOINT.split("/api")[0], "derived", data["id"]]
+                [API_ENDPOINT.split("/api/v1")[0], "derived", data["id"]]
             )
             combined_data["ms_name"] = data["name"]
             combined_data["ms_type"] = data["type"]
@@ -112,7 +112,9 @@ class GeoMineral:
             # GT details
             if "total_grade" in data["grade_tonnage"][0]:
                 combined_data["total_grade"] = data["grade_tonnage"][0]["total_grade"]
-                combined_data["total_tonnage"] = data["grade_tonnage"][0]["total_tonnage"]
+                combined_data["total_tonnage"] = data["grade_tonnage"][0][
+                    "total_tonnage"
+                ]
                 combined_data["total_contained_metal"] = data["grade_tonnage"][0][
                     "total_contained_metal"
                 ]
