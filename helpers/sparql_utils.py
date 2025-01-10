@@ -85,6 +85,9 @@ def infer_and_convert_types(df, round_flag=False):
             # After conversion, round to three decimal places if it's a float
             if round_flag:
                 if df[column].dtype == float:
+                    if column in ["Total Grade", "Total Tonnage"]:
+                        df[column] = df[column].round(6)
+                        continue
                     if column not in ["Latitude", "Longitude"]:
                         df[column] = df[column].round(1)
         except (ValueError, TypeError):

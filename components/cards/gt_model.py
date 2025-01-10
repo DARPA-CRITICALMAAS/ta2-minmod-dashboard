@@ -137,6 +137,11 @@ def get_gt_model(gt, proximity_value=0):
         by=["count", "avg_metal_per_tonnage"], ascending=[False, False]
     ).index.tolist()
 
+    # Ensure "Unknown" is at the bottom
+    if "Unknown" in unique_labels:
+        unique_labels.remove("Unknown")
+        unique_labels.append("Unknown")
+
     # Define color for each unique category in 'dtnorm_labels'
     colors = np.linspace(0, 1, len(unique_labels))
     color_map = {label: color for label, color in zip(unique_labels, colors)}

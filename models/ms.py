@@ -60,9 +60,6 @@ class MineralSite:
         results = []
         for data in raw_data:
 
-            if len(data["deposit_types"]) == 0:
-                continue
-
             combined_data = {}
             combined_data["ms"] = "/".join(
                 [API_ENDPOINT.split("/api")[0], "derived", data["id"]]
@@ -102,23 +99,32 @@ class MineralSite:
                 combined_data["lon"] = data["location"].get("lon", None)
 
             # Deposit Type details
-            highest_confidence_deposit = max(
-                data["deposit_types"], key=lambda x: x["confidence"]
-            )
+            if data["deposit_types"]:
+                highest_confidence_deposit = max(
+                    data["deposit_types"], key=lambda x: x["confidence"]
+                )
 
-            deposit_details = self.data_cache["deposit-types"].get(
-                highest_confidence_deposit["id"], None
-            )
+                deposit_details = self.data_cache["deposit-types"].get(
+                    highest_confidence_deposit["id"], None
+                )
 
-            if not deposit_details:
-                continue
-            combined_data["top1_deposit_name"] = deposit_details["name"]
-            combined_data["top1_deposit_group"] = deposit_details["group"]
-            combined_data["top1_deposit_environment"] = deposit_details["environment"]
-            combined_data["top1_deposit_confidence"] = highest_confidence_deposit[
-                "confidence"
-            ]
-            combined_data["top1_deposit_source"] = highest_confidence_deposit["source"]
+                combined_data["top1_deposit_name"] = deposit_details["name"]
+                combined_data["top1_deposit_group"] = deposit_details["group"]
+                combined_data["top1_deposit_environment"] = deposit_details[
+                    "environment"
+                ]
+                combined_data["top1_deposit_confidence"] = highest_confidence_deposit[
+                    "confidence"
+                ]
+                combined_data["top1_deposit_source"] = highest_confidence_deposit[
+                    "source"
+                ]
+            else:
+                combined_data["top1_deposit_name"] = "Unknown"
+                combined_data["top1_deposit_group"] = "Unknown"
+                combined_data["top1_deposit_environment"] = "Unknown"
+                combined_data["top1_deposit_confidence"] = 0
+                combined_data["top1_deposit_source"] = "Unknown"
 
             # Commodity details
             combined_data["commodity"] = data["grade_tonnage"][0]["commodity"]
@@ -126,16 +132,12 @@ class MineralSite:
             # GT details
             if "total_grade" in data["grade_tonnage"][0]:
                 combined_data["total_grade"] = data["grade_tonnage"][0]["total_grade"]
-                combined_data["total_tonnage"] = data["grade_tonnage"][0]["total_tonnage"]
+                combined_data["total_tonnage"] = data["grade_tonnage"][0][
+                    "total_tonnage"
+                ]
                 combined_data["total_contained_metal"] = data["grade_tonnage"][0][
                     "total_contained_metal"
                 ]
-            
-            # Setting Unkown Deposit Types
-            if not combined_data.get("total_tonnage") or not combined_data.get(
-                "total_grade"
-            ):
-                combined_data["top1_deposit_name"] = "Unknown"
 
             results.append(combined_data)
         return results
