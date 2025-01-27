@@ -127,9 +127,9 @@ def open_url(clickData):
     """A callback to handle geo map plot based on the user click"""
     if clickData:
         clicked_dict = clickData["points"][0]
-        filtered_df = gm.gdf[
-            (gm.gdf["lat"] == clicked_dict["lat"])
-            & (gm.gdf["lon"] == clicked_dict["lon"])
+        filtered_df = gm.df[
+            (gm.df["lat"] == clicked_dict["lat"])
+            & (gm.df["lon"] == clicked_dict["lon"])
         ]
         return filtered_df["ms"].tolist()[0], None
     return None, None

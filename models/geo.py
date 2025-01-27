@@ -129,7 +129,3 @@ class GeoMineral:
     def update_commodity(self, selected_commodity):
         """sets new commodity"""
         self.commodity = selected_commodity.lower()
-
-    def set_gdf(self, gdf):
-        """sets new geo dataframe"""
-        self.gdf = gdf
