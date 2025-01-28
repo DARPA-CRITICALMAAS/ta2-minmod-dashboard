@@ -7,7 +7,7 @@ from constants import CRITICAL_MINERALS
 
 
 def filter_df_critical_minerals(df, key):
-    return df[df[key].str.lower().isin(CRITICAL_MINERALS)]
+    return df
 
 
 def filter_df_threshold(df, threshold_prct=0.025):
@@ -29,7 +29,7 @@ def get_mineral_inventories_count_by_commodity():
             "/mineral-inventories/count-by-commodity", ssl_flag=False
         )
     )
-    df = filter_df_critical_minerals(df=df, key="commodity_label")
+    df = filter_df_critical_minerals(df=df, key="name")
     df = filter_df_threshold(df)
     return {
         "labels": df["comm_updated"].to_list(),
@@ -44,7 +44,7 @@ def get_mineral_site_count_per_commodity():
             "/mineral-sites/count-by-commodity", ssl_flag=False
         )
     )
-    df = filter_df_critical_minerals(df=df, key="commodity_label")
+    df = filter_df_critical_minerals(df=df, key="name")
     df = filter_df_threshold(df)
     return {
         "labels": df["comm_updated"].to_list(),
@@ -59,7 +59,7 @@ def get_docs_per_commodity():
             "/documents/count-by-commodity", ssl_flag=False
         )
     )
-    df = filter_df_critical_minerals(df=df, key="commodity_label")
+    df = filter_df_critical_minerals(df=df, key="name")
     df = filter_df_threshold(df)
     return {
         "labels": df["comm_updated"].to_list(),
