@@ -155,6 +155,8 @@ def get_gt_model(gt, proximity_value=0):
 
         aggregated_df = df_filtered
         if proximity_value != 0:
+            if d_type == "Unknown":
+                continue
             aggregated_df = greedy_weighted_avg_aggregation(
                 df_filtered, gt.distance_caches, proximity_value
             )
