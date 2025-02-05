@@ -10,9 +10,6 @@ import json
 from helpers.exceptions import MinModException
 from constants import ree_minerals, heavy_ree_minerals, light_ree_minerals, pge_minerals
 
-min_distance, max_distance = 0.1, 100
-marks = {0.1: "100m", 5: "5km", 20: "20km", 100: "100km"}
-
 dash.register_page(__name__, path="/gtmodel")
 
 layout = html.Div(
@@ -20,7 +17,7 @@ layout = html.Div(
         "display": "flex",
         "flexDirection": "column",
         "minHeight": "100vh",
-    },  # Flexbox to ensure proper layout
+    },
     children=[
         dcc.Location(id="url-gt", refresh=True),
         dbc.Card(
@@ -63,121 +60,102 @@ layout = html.Div(
                         ],
                         className="my-2",
                     ),
-                    # Row containing the slider with label above it and the download button on the right
+                    # Row containing the text label, input+button, and download button
                     html.Div(
                         id="slider-download-container",
                         children=[
                             dbc.Row(
                                 [
+                                    # Left Column with label and InputGroup (Input + Button)
                                     dbc.Col(
-                                        html.Div(
-                                            [
-                                                html.P(
-                                                    "Geo Spatial Aggregation (Kilometers)",  # Text above slider
-                                                    style={
-                                                        "font-family": '"Open Sans", verdana, arial, sans-serif',
-                                                        "font-size": "20px",
-                                                        "text-align": "center",
-                                                        "font-weight": "bold",
-                                                    },
-                                                ),
-                                                dcc.Slider(
-                                                    id="aggregation-slider",
-                                                    min=int(min_distance),
-                                                    max=int(max_distance),
-                                                    step=0.1,
-                                                    value=0,  # Set default value to 0 (min_distance)
-                                                    marks=marks,
-                                                    tooltip={
-                                                        "placement": "bottom",
-                                                        "always_visible": True,
-                                                        "template": "{value} kms",
-                                                    },
-                                                ),
-                                            ],
-                                            style={
-                                                "text-align": "center",  # Centering the label and slider
-                                            },
-                                        ),
-                                        width=6,  # Width of the slider column
+                                        [
+                                            html.P(
+                                                "Geo Spatial Aggregation (Kilometers)",
+                                                style={
+                                                    "font-family": '"Open Sans", verdana, arial, sans-serif',
+                                                    "font-size": "20px",
+                                                    "text-align": "center",
+                                                    "font-weight": "bold",
+                                                },
+                                            ),
+                                            dbc.InputGroup(
+                                                [
+                                                    dbc.Input(
+                                                        id="aggregation-input",
+                                                        type="number",
+                                                        value=0,  # Default value
+                                                        step=0.1,
+                                                        style={"maxWidth": "200px"},
+                                                    ),
+                                                    dbc.Button(
+                                                        "Aggregate",
+                                                        id="aggregate-btn",
+                                                        color="primary",
+                                                    ),
+                                                ],
+                                                style={"justifyContent": "center"},
+                                            ),
+                                        ],
+                                        width=6,
                                         style={
-                                            "padding": "40px 0",  # Padding at the top and bottom
-                                            "margin": "auto",  # Center the slider and label
+                                            "padding": "20px 0",
+                                            "margin": "auto",
+                                            "text-align": "center",
                                         },
                                     ),
+                                    # Right Column with Download CSV button
                                     dbc.Col(
                                         dbc.Button(
                                             "Download CSV",
                                             id="download-btn",
                                             color="primary",
-                                            className="mt-3",
                                         ),
                                         width="auto",
                                         style={
-                                            "text-align": "right",  # Align button to the right
+                                            "text-align": "right",
                                             "padding-top": "20px",
                                         },
-                                        className="d-flex justify-content-end",  # Ensures it sticks to the right
+                                        className="d-flex justify-content-end",
                                     ),
                                 ],
-                                className="my-3 d-flex justify-content-between align-items-center",  # Ensures alignment and spacing
+                                className="my-3 d-flex justify-content-between align-items-center",
                             )
                         ],
                     ),
-                    dcc.Download(id="download-csv"),  # Download component
+                    dcc.Download(id="download-csv"),
                 ],
                 style={
                     "display": "flex",
-                    "flex-direction": "column",  # Flexbox to control the layout
-                    "height": "auto",  # Let the card take its natural height
+                    "flex-direction": "column",
+                    "height": "auto",
                 },
             ),
             style={
                 "margin": "10px",
                 "margin-top": "30px",
                 "display": "flex",
-                "flex-direction": "column",  # Flexbox on the card to stack items vertically
+                "flex-direction": "column",
             },
         ),
         dcc.Store(id="gt-agg-data"),
         dcc.Store(id="gt-df-data"),
         dcc.Store(id="select-commodity-data"),
         html.Div(id="url", style={"display": "none"}),
-        html.Div(id="url-div", style={"display": "none"}),  # Dummy div
+        html.Div(id="url-div", style={"display": "none"}),
     ],
 )
 
 
 @callback(
     Output("commodity-gt", "options"),
-    Input(
-        "url-gt", "pathname"
-    ),  # This triggers the callback when the page is refreshed or the URL changes
+    Input("url-gt", "pathname"),
 )
 def update_commodity_dropdown(pathname):
+    """Update dropdown options when the page is loaded or refreshed."""
     options = [
         {"label": commodity, "value": commodity} for commodity in kpis.get_commodities()
     ]
     return options
-
-
-# @callback(Output("commodity-gt", "value"), Input("commodity-gt", "options"))
-# def set_default_commodity(options):
-#     return options[0]["value"] if options else None
-
-
-@callback(
-    Output(
-        "aggregation-slider", "value"
-    ),  # Reset slider value to 0 on commodity change
-    [Input("aggregation-slider", "value"), Input("commodity-gt", "value")],
-    State("select-commodity-data", "commodity_data"),
-)
-def reset_slider_on_commodity_change(value, selected_commodity, commodity_data):
-    if selected_commodity != commodity_data:
-        return 0  # Reset slider to 0 whenever a new commodity is selected
-    else:
-        return value
 
 
 @callback(
@@ -185,6 +163,7 @@ def reset_slider_on_commodity_change(value, selected_commodity, commodity_data):
     Input("clickable-plot", "figure"),
 )
 def toggle_slider_and_download(figure):
+    """Show or hide the input+download container based on whether the figure has data."""
     if figure and figure.get("data"):
         return {"display": "block"}
     return {"display": "none"}
@@ -199,16 +178,24 @@ def toggle_slider_and_download(figure):
         Output("commodity-gt", "value"),
     ],
     [
-        Input("commodity-gt", "value"),
-        Input("aggregation-slider", "value"),  # Add slider as input
+        Input("commodity-gt", "value"),  # When commodity changes
+        Input("aggregate-btn", "n_clicks"),  # When user clicks "Aggregate"
+    ],
+    [
+        State("aggregation-input", "value"),  # The proximity value from the input
         State("clickable-plot", "figure"),
     ],
     prevent_initial_call=True,
 )
-def update_output(selected_commodities, proximity_value, figure):
-    """A callback to render grade tonnage model based on the commodity selected and proximity value"""
+def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
+    """
+    A callback to render the Grade-Tonnage model based on the commodity selected
+    and the proximity value, triggered either by commodity change or
+    by clicking the 'Aggregate' button.
+    """
 
     if not selected_commodities:
+        # If no commodity selected, clear figure.
         return (
             None,
             None,
@@ -217,14 +204,16 @@ def update_output(selected_commodities, proximity_value, figure):
                 dcc.Graph(
                     id="clickable-plot",
                     figure={},
-                    style={
-                        "display": "none",
-                    },
+                    style={"display": "none"},
                 ),
             ],
             [],
         )
 
+    # If user hasn't clicked "Aggregate", default proximity = 0
+    proximity_value = user_proximity_value if n_clicks else 0
+
+    # Expand custom REE groupings
     if "REE" in selected_commodities:
         selected_commodities.remove("REE")
         selected_commodities = list(set(selected_commodities + ree_minerals))
@@ -236,7 +225,7 @@ def update_output(selected_commodities, proximity_value, figure):
     if "LIGHT-REE" in selected_commodities:
         selected_commodities.remove("LIGHT-REE")
         selected_commodities = list(set(selected_commodities + light_ree_minerals))
-    
+
     if "PGE" in selected_commodities:
         selected_commodities.remove("PGE")
         selected_commodities = list(set(selected_commodities + pge_minerals))
@@ -244,36 +233,30 @@ def update_output(selected_commodities, proximity_value, figure):
     try:
         gt = GradeTonnage(selected_commodities, proximity_value)
         gt.init()
-        if proximity_value != 0:
+
+        # If there's a figure already, preserve the visible traces
+        if proximity_value != 0 and figure and "data" in figure:
             visible_traces = [
                 " ".join(trace["name"].split()[:-1])
                 for trace in figure["data"]
-                if "hovertemplate" in trace and trace.get("visible", True) == True
+                if "hovertemplate" in trace and trace.get("visible", True) is True
             ]
             gt.visible_traces = visible_traces
 
     except MinModException as e:
+        # Show an error message if the model fails to initialize
         return (
             None,
             None,
             selected_commodities,
             [
-                dbc.Alert(
-                    str(e),
-                    color="danger",
-                ),
-                dcc.Graph(
-                    id="clickable-plot",
-                    figure={},
-                    style={
-                        "display": "none",
-                    },
-                ),
+                dbc.Alert(str(e), color="danger"),
+                dcc.Graph(id="clickable-plot", figure={}, style={"display": "none"}),
             ],
             selected_commodities,
         )
 
-    except Exception as e:
+    except Exception:
         return (
             None,
             None,
@@ -283,17 +266,12 @@ def update_output(selected_commodities, proximity_value, figure):
                     "No results found or there was an error with the query.",
                     color="danger",
                 ),
-                dcc.Graph(
-                    id="clickable-plot",
-                    figure={},
-                    style={
-                        "display": "none",
-                    },
-                ),
+                dcc.Graph(id="clickable-plot", figure={}, style={"display": "none"}),
             ],
             selected_commodities,
         )
 
+    # Build the GT model figure
     gt, gt_model_plot = get_gt_model(gt, proximity_value)
     return (
         json.dumps(
@@ -335,12 +313,12 @@ def update_output(selected_commodities, proximity_value, figure):
     Output("url", "children"),
     Output("clickable-plot", "clickData"),
     Input("clickable-plot", "clickData"),
-    State("gt-df-data", "df_data"),  # Use as state
+    State("gt-df-data", "df_data"),
     prevent_initial_call=True,
 )
 def open_url(clickData, df_data):
-    """A callback to open the clicked url on a new tab"""
-    if not df_data:  # Safeguard against unnecessary execution
+    """A callback to open the clicked url on a new tab."""
+    if not df_data:
         raise dash.exceptions.PreventUpdate
     df_data = pd.read_json(df_data, orient="split")
     if clickData:
@@ -359,32 +337,26 @@ clientside_callback(
     }
     """,
     Output("url-div", "children"),
-    [Input("url", "children")],  # Input is the URL to open
+    [Input("url", "children")],
 )
 
 
-# Fixed Callback to generate CSV and trigger download
 @callback(
     Output("download-csv", "data"),
-    Input("download-btn", "n_clicks"),  # Trigger the callback only on button click
+    Input("download-btn", "n_clicks"),
     [
-        State("gt-agg-data", "agg_data"),  # Use as state
-        State("clickable-plot", "figure"),  # Use as state
+        State("gt-agg-data", "agg_data"),
+        State("clickable-plot", "figure"),
     ],
-    prevent_initial_call=True,  # Ensures the callback does not run on page load
+    prevent_initial_call=True,
 )
 def download_csv(n_clicks, agg_data, figure):
-    """Callback to generate CSV data for download only when the button is clicked"""
-    if not n_clicks:  # Safeguard against unnecessary execution
+    """Callback to generate CSV data for download only when the button is clicked."""
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+    if not agg_data or not figure:
         raise dash.exceptions.PreventUpdate
 
-    if not agg_data:  # Safeguard against unnecessary execution
-        raise dash.exceptions.PreventUpdate
-
-    if not figure:  # Safeguard against unnecessary execution
-        raise dash.exceptions.PreventUpdate
-
-    # Parse and aggregate data
     try:
         aggregated_df = [
             pd.read_json(dt, orient="split") for dt in json.loads(agg_data)
@@ -413,15 +385,15 @@ def download_csv(n_clicks, agg_data, figure):
             "Total Grade(Percent)",
         ]
 
-        # Filter by visible traces
+        # Only keep data corresponding to visible traces
         visible_traces = [
             " ".join(trace["name"].split()[:-1])
             for trace in figure["data"]
-            if "hovertemplate" in trace and trace.get("visible", True) == True
+            if "hovertemplate" in trace and trace.get("visible", True) is True
         ]
         df = df[df["top1_deposit_name"].isin(visible_traces)]
 
-        # Clean up column data
+        # Clean up text
         df["ms_name"] = df["ms_name"].apply(
             lambda x: x[2:].replace("::", ",") if "::" in x else x
         )
@@ -429,15 +401,12 @@ def download_csv(n_clicks, agg_data, figure):
             lambda x: x[2:].replace("::", ",") if "::" in x else x
         )
 
-        # Update column names
         df.columns = column_names
 
-        # Check if DataFrame is empty
         if df.empty:
             print("No data available to download.")
             raise dash.exceptions.PreventUpdate
 
-        # Generate CSV data for download
         return dcc.send_data_frame(df.to_csv, "gt_data.csv")
     except Exception as e:
         print(f"Error generating CSV: {e}")
