@@ -3,10 +3,11 @@ from dash import html, callback, clientside_callback, dcc
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import pandas as pd
+import json
+
 from helpers import kpis
 from components import get_gt_model
 from models import GradeTonnage
-import json
 from helpers.exceptions import MinModException
 from constants import ree_minerals, heavy_ree_minerals, light_ree_minerals, pge_minerals
 
@@ -23,24 +24,57 @@ layout = html.Div(
         dbc.Card(
             dbc.CardBody(
                 [
+                    # ------------------------ Commodity + Generate row ------------------------
                     dbc.Row(
                         dbc.Col(
-                            dcc.Dropdown(
-                                id="commodity-gt",
-                                options=[
-                                    {"label": commodity, "value": commodity}
-                                    for commodity in kpis.get_commodities()
-                                ],
-                                multi=True,
-                                placeholder="Search Commodity",
-                            ),
-                            width=3,
+                            [
+                                html.P(
+                                    "Select Commodity",
+                                    style={
+                                        "font-family": '"Open Sans", verdana, arial, sans-serif',
+                                        "font-size": "15px",
+                                        "text-align": "center",
+                                        "font-weight": "bold",
+                                    },
+                                ),
+                                dbc.InputGroup(
+                                    [
+                                        dcc.Dropdown(
+                                            id="commodity-gt",
+                                            # The options will be updated by the callback 'update_commodity_dropdown'
+                                            options=[],
+                                            multi=True,
+                                            placeholder="Search Commodity",
+                                            style={
+                                                "width": "300px",
+                                                "fontSize": "13px",
+                                            },
+                                        ),
+                                        dbc.Button(
+                                            "Generate",
+                                            id="generate-btn",
+                                            color="primary",
+                                            style={
+                                                "fontSize": "13px",
+                                            },
+                                        ),
+                                    ],
+                                    style={"justifyContent": "center"},
+                                ),
+                            ],
+                            width=6,
+                            style={
+                                "padding": "20px 0",
+                                "margin": "auto",
+                                "text-align": "center",
+                            },
                         ),
                         style={
                             "margin-top": "15px",
                             "margin-bottom": "30px",
                         },
                     ),
+                    # ------------------------ Figure row ------------------------
                     dbc.Row(
                         [
                             dbc.Spinner(
@@ -60,7 +94,7 @@ layout = html.Div(
                         ],
                         className="my-2",
                     ),
-                    # Row containing the text label, input+button, and download button
+                    # ------------------------ Aggregation + Download row ------------------------
                     html.Div(
                         id="slider-download-container",
                         children=[
@@ -73,7 +107,7 @@ layout = html.Div(
                                                 "Geo Spatial Aggregation (Kilometers)",
                                                 style={
                                                     "font-family": '"Open Sans", verdana, arial, sans-serif',
-                                                    "font-size": "20px",
+                                                    "font-size": "15px",
                                                     "text-align": "center",
                                                     "font-weight": "bold",
                                                 },
@@ -85,7 +119,10 @@ layout = html.Div(
                                                         type="number",
                                                         value=0,  # Default value
                                                         step=0.1,
-                                                        style={"maxWidth": "200px"},
+                                                        style={
+                                                            "maxWidth": "200px",
+                                                            "font-size": "13px",
+                                                        },
                                                     ),
                                                     dbc.Button(
                                                         "Aggregate",
@@ -151,7 +188,9 @@ layout = html.Div(
     Input("url-gt", "pathname"),
 )
 def update_commodity_dropdown(pathname):
-    """Update dropdown options when the page is loaded or refreshed."""
+    """
+    Update the commodity dropdown options whenever this page loads or refreshes.
+    """
     options = [
         {"label": commodity, "value": commodity} for commodity in kpis.get_commodities()
     ]
@@ -163,7 +202,9 @@ def update_commodity_dropdown(pathname):
     Input("clickable-plot", "figure"),
 )
 def toggle_slider_and_download(figure):
-    """Show or hide the input+download container based on whether the figure has data."""
+    """
+    Show or hide the aggregation + download container based on whether the figure has data.
+    """
     if figure and figure.get("data"):
         return {"display": "block"}
     return {"display": "none"}
@@ -178,24 +219,37 @@ def toggle_slider_and_download(figure):
         Output("commodity-gt", "value"),
     ],
     [
-        Input("commodity-gt", "value"),  # When commodity changes
-        Input("aggregate-btn", "n_clicks"),  # When user clicks "Aggregate"
+        Input("generate-btn", "n_clicks"),  # Trigger on "Generate" button
+        Input("aggregate-btn", "n_clicks"),  # Trigger on "Aggregate" button
     ],
     [
-        State("aggregation-input", "value"),  # The proximity value from the input
-        State("clickable-plot", "figure"),
+        State("commodity-gt", "value"),  # Dropdown commodities as State
+        State("aggregation-input", "value"),  # The proximity value
+        State("clickable-plot", "figure"),  # Current figure
     ],
     prevent_initial_call=True,
 )
-def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
+def update_output(
+    generate_n_clicks,
+    aggregate_n_clicks,
+    selected_commodities,
+    user_proximity_value,
+    figure,
+):
     """
-    A callback to render the Grade-Tonnage model based on the commodity selected
-    and the proximity value, triggered either by commodity change or
-    by clicking the 'Aggregate' button.
+    Render the Grade-Tonnage model based on:
+      - The selected commodities (via State)
+      - The proximity value (if "Aggregate" is clicked)
+      - The triggered button (either 'Generate' or 'Aggregate')
     """
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise dash.exceptions.PreventUpdate
+
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
     if not selected_commodities:
-        # If no commodity selected, clear figure.
+        # If no commodity is selected, reset the figure
         return (
             None,
             None,
@@ -210,8 +264,10 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
             [],
         )
 
-    # If user hasn't clicked "Aggregate", default proximity = 0
-    proximity_value = user_proximity_value if n_clicks else 0
+    # Default proximity value = 0 unless user clicked Aggregate
+    proximity_value = 0
+    if triggered_id == "aggregate-btn":
+        proximity_value = user_proximity_value or 0
 
     # Expand custom REE groupings
     if "REE" in selected_commodities:
@@ -234,8 +290,8 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
         gt = GradeTonnage(selected_commodities, proximity_value)
         gt.init()
 
-        # If there's a figure already, preserve the visible traces
-        if proximity_value != 0 and figure and "data" in figure:
+        # Preserve visibility from the existing figure if the user just clicked Aggregate
+        if triggered_id == "aggregate-btn" and figure and "data" in figure:
             visible_traces = [
                 " ".join(trace["name"].split()[:-1])
                 for trace in figure["data"]
@@ -244,7 +300,7 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
             gt.visible_traces = visible_traces
 
     except MinModException as e:
-        # Show an error message if the model fails to initialize
+        # Handle custom exception
         return (
             None,
             None,
@@ -255,8 +311,8 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
             ],
             selected_commodities,
         )
-
     except Exception:
+        # Handle generic error
         return (
             None,
             None,
@@ -273,6 +329,7 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
 
     # Build the GT model figure
     gt, gt_model_plot = get_gt_model(gt, proximity_value)
+
     return (
         json.dumps(
             [df.to_json(date_format="iso", orient="split") for df in gt.aggregated_df]
@@ -317,7 +374,10 @@ def update_output(selected_commodities, n_clicks, user_proximity_value, figure):
     prevent_initial_call=True,
 )
 def open_url(clickData, df_data):
-    """A callback to open the clicked url on a new tab."""
+    """
+    A callback to open the clicked ms url on a new tab.
+    Resets clickData so repeated clicks on the same point still trigger.
+    """
     if not df_data:
         raise dash.exceptions.PreventUpdate
     df_data = pd.read_json(df_data, orient="split")
@@ -351,7 +411,9 @@ clientside_callback(
     prevent_initial_call=True,
 )
 def download_csv(n_clicks, agg_data, figure):
-    """Callback to generate CSV data for download only when the button is clicked."""
+    """
+    Callback to generate CSV data for download only when the button is clicked.
+    """
     if not n_clicks:
         raise dash.exceptions.PreventUpdate
     if not agg_data or not figure:
