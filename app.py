@@ -11,7 +11,9 @@ server = Flask(__name__)  # define flask app.server
 
 app = dash.Dash(
     url_base_pathname="/dashboard/",
-    external_stylesheets=[dbc.themes.LITERA, FA], use_pages=True, server=server
+    external_stylesheets=[dbc.themes.LITERA, FA],
+    use_pages=True,
+    server=server,
 )
 
 app.index_string = """
@@ -41,7 +43,7 @@ app.layout = html.Div(
             dash.page_container,
             style={
                 "flex": "1 0 auto",  # Ensure it takes the remaining space but can grow
-                "margin-bottom": "40px",
+                # "margin-bottom": "40px",
             },
         ),
     ],
@@ -52,4 +54,3 @@ app.config.suppress_callback_exceptions = True
 # Run app and display result inline in the notebook
 if __name__ == "__main__":
     app.run_server(host="0.0.0.0", port=8050)
-    

@@ -134,11 +134,6 @@ def render():
                                 width=4,
                             ),
                         ],
-                        style={
-                            "padding-left": "40px",
-                            "margin-bottom": "30px",
-                            "margin-top": "20px",
-                        },
                     ),
                 ]
             ),
