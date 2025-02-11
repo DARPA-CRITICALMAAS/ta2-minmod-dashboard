@@ -55,7 +55,7 @@ layout = html.Div(
                                             id="generate-btn",
                                             color="primary",
                                             style={
-                                                "fontSize": "13px",
+                                                "fontSize": "12px",
                                             },
                                         ),
                                     ],
@@ -64,14 +64,12 @@ layout = html.Div(
                             ],
                             width=6,
                             style={
-                                "padding": "20px 0",
                                 "margin": "auto",
                                 "text-align": "center",
                             },
                         ),
                         style={
-                            "margin-top": "15px",
-                            "margin-bottom": "30px",
+                            "margin-bottom": "10px",
                         },
                     ),
                     # ------------------------ Figure row ------------------------
@@ -135,7 +133,6 @@ layout = html.Div(
                                         ],
                                         width=6,
                                         style={
-                                            "padding": "20px 0",
                                             "margin": "auto",
                                             "text-align": "center",
                                         },
@@ -150,7 +147,6 @@ layout = html.Div(
                                         width="auto",
                                         style={
                                             "text-align": "right",
-                                            "padding-top": "20px",
                                         },
                                         className="d-flex justify-content-end",
                                     ),
@@ -168,8 +164,6 @@ layout = html.Div(
                 },
             ),
             style={
-                "margin": "10px",
-                "margin-top": "30px",
                 "display": "flex",
                 "flex-direction": "column",
             },
