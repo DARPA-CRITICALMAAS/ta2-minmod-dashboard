@@ -1,11 +1,8 @@
-import pandas as pd
-import numpy as np
 import dash_bootstrap_components as dbc
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 from dash import dcc
-
-import numpy as np
-import plotly.graph_objects as go
 
 
 def extract_lat_lon(wkt_point):
@@ -165,8 +162,8 @@ def get_gt_model(gt, proximity_value=0):
         hover_template = (
             "<b>MS Name:</b> %{text}<br>"
             + "<b>Commodity:</b> %{customdata[0]}<br>"
-            + "<b>Grade:</b> %{y}<br>"
-            + "<b>Tonnage:</b> %{x}<br>"
+            + "<b>Grade:</b> %{y} (%)<br>"
+            + "<b>Tonnage:</b> %{x} (Mt)<br>"
             + "<extra></extra>"
         )
 
@@ -207,7 +204,7 @@ def get_gt_model(gt, proximity_value=0):
         # Tonnage values range for plotting the line
         tonnage_range = np.logspace(-8, 8, 100)
         grade_values = metal_content / tonnage_range  # Grade = Metal Content / Tonnage
-        hover_text = f"<span style='color: white;'><b>Contained Metal:</b> {metal_content} Mt</span>"
+        hover_text = f"<span style='color: white;'><b>Contained Metal:</b> {metal_content / 100} Mt</span>"
 
         gt_model.add_trace(
             go.Scatter(
